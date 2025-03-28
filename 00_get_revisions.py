@@ -127,7 +127,7 @@ def get_review_sentences_and_rating(note, conference):
                 for key in [
                     "strengths_and_weaknesses"
                     # TODO: find the other fields
-                ]]
+                ]])
         rating = note.content['recommendation']
     elif conference == scc_lib.Conference.iclr_2022:
         review_text = note.content['main_review']
@@ -182,9 +182,9 @@ def process_forum(forum, conference, output_dir):
         note for note in forum_notes if is_review(note, conference)
         ]
         # The conditions that make a note a review differ from year to year.
-        
+
     # Retrieve decision
-    decisions = first_not_none([
+    decision = first_not_none([
         note.content.get('decision', None)
         for note in forum_notes
     ])

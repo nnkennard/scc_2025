@@ -20,8 +20,8 @@ parser.add_argument(
 )
 
 UNDER_REVIEW_RE = re.compile(
-    "Under review as a conference paper at ICLR 20[0-9]{2}")
-PUBLISHED_RE = re.compile("Published as a conference paper at ICLR 20[0-9]{2}")
+    "Under review as a conference paper at ICLR 20[0-9]{2}\s")
+PUBLISHED_RE = re.compile("Published as a conference paper at ICLR 20[0-9]{2}\s")
 
 #TODO: find out what ABSTRACT_HEADER and SECTION_HEADER as supposed to do
 
@@ -31,39 +31,28 @@ def clean_file(filename):
     with open(filename, 'r') as f:
         lines = [line.strip() for line in f.readlines()]
 
-    curr_page_num = 0
+    # Figure out what the boilerplate line is. For rejected papers, the final
+    # pdf may still be 'Under review'.
+    for line in lines:
+        if UNDER_REVIEW_RE.match(line):
+            boilerplate_re = UNDER_REVIEW_RE
+            break
+        elif PUBLISHED_RE.match(line):
+            boilerplate_re = PUBLISHED_RE
+            break
+
     final_lines = []
 
-    for i in range(len(lines)):
-        line = lines[i]
+    for line in lines:
         if not line:
             continue
-        if line.startswith("R EFERENCES"):
+        if line.startswith("R EFERENCES") or line.startswith("REFERENCES"):
+            # Typo fixed in 2022
             # References starting. We are done.
             break
-        if UNDER_REVIEW_RE.match(line) or PUBLISHED_RE.match(line):
-            if i > 2:
-                #assert not lines[i-1]
-                next_page_num = str(curr_page_num + 1)
-                curr_page_num += 1
-                temp = final_lines.pop(-1)
-                if temp.endswith(next_page_num):
-                    final_lines.append(temp[:-len(next_page_num)])
-                else:
-                    final_lines.append(temp)
-                continue
-        #elif ABSTRACT_HEADER_RE.match(line):
-        #    abstract_seen = True
-        #    final_lines.append(line)
-        #elif abstract_seen and SECTION_HEADER_RE.match(line):
-        #    print("*", final_lines[-1])
-        #    if mostly_caps(line) and final_lines[-1][-1].isnumeric():
-        #        prev_line = final_lines.pop(-1)
-        #        rev_sec_num = re.search("^([0-9](\s\.[0-9]+)*)",
-        #        prev_line[::-1]).group(1)
-        #        final_lines.append(
-        #            prev_line[:-len(rev_sec_num)])
-        #    final_lines.append(line)
+        matched = False
+        if boilerplate_re.match(line):
+            final_lines.append("".join(re.split(boilerplate_re, line)))
         else:
             final_lines.append(line)
 

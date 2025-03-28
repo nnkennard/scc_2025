@@ -36,13 +36,13 @@ def extract_text(pdf_path):
 def main():
     args = parser.parse_args()
     for pdf_path in tqdm.tqdm(list(glob.glob(f"{args.data_dir}/*/*.pdf"))):
-        output_path = pdf_path.replace('.pdf', '.txt')
+        output_path = pdf_path.replace('.pdf', '_raw.txt')
         if os.path.isfile(output_path):
             # PDF text has already been extracted
             continue
         else:
             with open(output_path, 'w') as f:
-                f.write(extract_text(pdf_path)
+                f.write(extract_text(pdf_path))
 
 
 if __name__ == "__main__":
