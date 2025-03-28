@@ -1,10 +1,11 @@
+"""Extract text from OpenReview PDFs.
+"""
+
 import argparse
 import glob
 import os
 import tqdm
 import subprocess
-
-import scc_lib
 
 parser = argparse.ArgumentParser(description="")
 parser.add_argument(
@@ -19,22 +20,29 @@ PLACEHOLDER = "$$$$$$$$$$$$$"
 
 
 def extract_text(pdf_path):
-    print("Trying to extract text from ", pdf_path)
+    # pdfdiff with only one command line argument simply extracts pdf text.
     output = subprocess.run(["python", "pdfdiff.py", pdf_path],
                             capture_output=True).stdout
-    return (output.decode().replace("-\n", "").replace(
-        "\n\n", PLACEHOLDER).replace("\n", " ").replace(PLACEHOLDER, "\n\n"))
+    # TODO: check for errors
+
+    return (output.decode( # Clean up whitespace quirks
+        ).replace("-\n", ""             # remove hyphenations
+        ).replace("\n\n", PLACEHOLDER   # placeholder for real newlines
+        ).replace("\n", " "             # remove line breaks
+        ).replace(PLACEHOLDER, "\n\n"   # restore real newlines
+        ))
 
 
 def main():
     args = parser.parse_args()
     for pdf_path in tqdm.tqdm(list(glob.glob(f"{args.data_dir}/*/*.pdf"))):
-        print(pdf_path)
-        if not os.path.isfile(f'{pdf_path[:-4]}.txt'):
-            text = extract_text(pdf_path)
-            output_path = f'{pdf_path[:-4]}.txt'
+        output_path = pdf_path.replace('.pdf', '.txt')
+        if os.path.isfile(output_path):
+            # PDF text has already been extracted
+            continue
+        else:
             with open(output_path, 'w') as f:
-                f.write(text)
+                f.write(extract_text(pdf_path)
 
 
 if __name__ == "__main__":
