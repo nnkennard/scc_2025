@@ -1,3 +1,8 @@
+"""Edit out recurring boilerplate in OpenReview files to reduce noise in diffs.
+
+Also, leave out references (for now)
+"""
+
 import argparse
 import glob
 import json
@@ -17,13 +22,8 @@ parser.add_argument(
 UNDER_REVIEW_RE = re.compile(
     "Under review as a conference paper at ICLR 20[0-9]{2}")
 PUBLISHED_RE = re.compile("Published as a conference paper at ICLR 20[0-9]{2}")
-ABSTRACT_HEADER_RE = re.compile("^A\sBSTRACT")
-SECTION_HEADER_RE = re.compile("^[A-Z]\s?[A-Z+]")
 
-
-def mostly_caps(line):
-    letters = "".join(line.split())
-    return len([x for x in letters if x.isupper()]) / len(letters) > 0.8
+#TODO: find out what ABSTRACT_HEADER and SECTION_HEADER as supposed to do
 
 
 def clean_file(filename):
@@ -34,7 +34,6 @@ def clean_file(filename):
     curr_page_num = 0
     final_lines = []
 
-    abstract_seen = False
     for i in range(len(lines)):
         line = lines[i]
         if not line:
