@@ -1,8 +1,4 @@
-import difflib
-import myers
-
-import diff_lib_2
-import re
+from scc_diff_lib import DocumentDiff
 
 source_tokens = ("twas brillig and the slithy toves did gyre and gimble in the wabe"
     " all mimsy were the borogoves and the mome raths outgrabe").split()
@@ -18,5 +14,5 @@ rikkiiikkkkkrrkkkkkkkkkkkkk
 <re.Match object; span=(12, 14), match='rr'>
 """
 
-diff_lib_2.make_diffs([source_tokens], [dest_tokens])
-
+d = DocumentDiff([source_tokens], [dest_tokens])
+print(d.dump())
