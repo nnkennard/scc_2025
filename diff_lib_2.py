@@ -1,5 +1,7 @@
 import collections
 import difflib
+import myers
+import re
 
 MATCHING_BLOCK = "MatchingBlock"
 NONMATCHING_BLOCK = "NonMatchingBlock"
@@ -7,15 +9,12 @@ NONMATCHING_BLOCK = "NonMatchingBlock"
 MatchingBlock = collections.namedtuple(MATCHING_BLOCK, "a b l".split())
 NonMatchingBlock = collections.namedtuple(NONMATCHING_BLOCK,
                                             "a b l_a l_b".split())
-
-def is_matching_block(block):
-    return type(block) == type(MatchingBlock)
-    #return type(block).endswith("."+MATCHING_BLOCK)
+Diff = collections.namedtuple("Diff", "index old new".split())
 
 def flatten_sentences(sentences):
     return sum(sentences, [])
 
-class Diff(object):
+class DocumentDiff(object):
     def __init__(self, unflat_source_tokens, unflat_dest_tokens):
         self.source_tokens = flatten_sentences(unflat_source_tokens)
         self.dest_tokens = flatten_sentences(unflat_dest_tokens)
@@ -26,8 +25,11 @@ class Diff(object):
         self.blocks = self._get_matching_blocks()
         self._reconstruct_from_blocks()
         for block in self.blocks:
-            if type(block) == "NonMatchingBlock":
-                diffs += self._diff_blocks(block)
+            if isinstance(block, NonMatchingBlock):
+                diffs += self._diff_within_block(block)
+
+        self.diffs = diffs
+        self._reconstruct_from_diffs()
 
 
     def _get_matching_blocks(self):
@@ -69,11 +71,42 @@ class Diff(object):
 
         assert reconstructed_tokens == self.dest_tokens
 
-    def _diff_blocks(self, block):
-        pass
+    def _diff_within_block(self, block):
+        myers_diff = myers.diff(
+            self.source_tokens[block.a:block.a+block.l_a],
+            self.dest_tokens[block.b:block.b+block.l_b]
+        )
+        diff_str = "".join(x[0] for x in myers_diff)
+        diffs = []
+        for m in re.finditer("[ir]+", diff_str):
+            tokens_added = []
+            tokens_deleted = []
+            for i in range(*m.span()):
+                action, token = myers_diff[i]
+                if action == 'i':
+                    tokens_added.append(token)
+                else:
+                    tokens_deleted.append(token)
+            diffs.append(Diff(block.a, tokens_deleted, tokens_added))
+        return diffs
+
+    def _reconstruct_from_diffs(self):
+        reconstructed_tokens = []
+        source_cursor = 0
+        for diff in self.diffs:
+            reconstructed_tokens += self.source_tokens[source_cursor:diff.index]
+            reconstructed_tokens += diff.new
+            source_cursor = diff.index + len(diff.old)
+
+        reconstructed_tokens += self.source_tokens[source_cursor:]
+        assert reconstructed_tokens == self.dest_tokens
+
+
 def make_diffs(unflat_source_tokens, unflat_dest_tokens):
 
-    new_diff = Diff(unflat_source_tokens, unflat_dest_tokens)
+    new_diff = DocumentDiff(unflat_source_tokens, unflat_dest_tokens)
     new_diff.calculate()
+    for x in new_diff.diffs:
+        print(x)
 
 
