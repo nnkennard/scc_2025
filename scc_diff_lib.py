@@ -38,6 +38,11 @@ class DocumentDiff(object):
         self.source_tokens = flatten_sentences(unflat_source_tokens)
         self.dest_tokens = flatten_sentences(unflat_dest_tokens)
 
+        with open('debug_source_tokens.txt', 'w') as f:
+            f.write("\n".join(self.source_tokens))
+        with open('debug_dest_tokens.txt', 'w') as f:
+            f.write("\n".join(self.dest_tokens))
+
         self.calculate()
 
     def calculate(self):
@@ -87,6 +92,10 @@ class DocumentDiff(object):
                 NonMatchingBlock(source_cursor, dest_cursor,
                                  source_nonmatching_len, dest_nonmatching_len))
 
+
+        final_blocks = []
+
+
         return blocks
 
     def _diff_within_block(self, block):
@@ -96,22 +105,44 @@ class DocumentDiff(object):
             self.source_tokens[block.a:block.a + block.l_a],
             self.dest_tokens[block.b:block.b + block.l_b])
 
+        print(" ".join(self.source_tokens[block.a:block.a + block.l_a]))
+        print(" ".join(self.dest_tokens[block.b:block.b + block.l_b]))
         # Convert the actions in the myers diff into a string so that regex can
         # be used
         diff_str = "".join(x[0] for x in myers_diff)
 
+        print("diff str len", len(diff_str))
+        print(diff_str)
+
         diffs = []
-        for m in re.finditer("[ir]+", diff_str):
-            # A sequence of inserts and removes
-            inserted = []
-            removed = []
-            for i in range(*m.span()):
-                action, token = myers_diff[i]
-                if action == 'i':
-                    inserted.append(token)
+        in_block_index = 0
+        for m in re.finditer("([ir]+)|(k+)", diff_str):
+            start, end = m.span()
+            if re.match('[ir]+', diff_str[start:end]):
+                inserted = []
+                removed = []
+                diff_index = block.a + in_block_index
+                for i in range(start, end):
+                    action, token = myers_diff[i]
+                    if action == 'i':
+                        inserted.append(token)
+                    else:
+                        removed.append(token)
+                if removed:
+                    print("Has removed tokens!!")
+                    diffs.append(Diff(diff_index, removed, inserted))
                 else:
-                    removed.append(token)
-            diffs.append(Diff(block.a, removed, inserted))
+                    print("No removed tokens!!")
+                    diff_index -= 1
+                    placeholder_token = self.source_tokens[diff_index]
+                    diffs.append(Diff(diff_index, [placeholder_token],
+                        [placeholder_token] + inserted))
+            elif re.match('k+', diff_str[start:end]):
+                in_block_index += (end - start)
+        for i in diffs:
+            print(i)
+            print("=" * 80)
+            print()
         return diffs
 
     def dump(self):
@@ -145,11 +176,25 @@ class DocumentDiff(object):
     def _reconstruct_from_diffs(self):
         reconstructed_tokens = []
         source_cursor = 0
-        for diff in self.diffs:
+        print("Reconstructing from diffs")
+        print(len(self.diffs))
+        for i, diff in enumerate(self.diffs):
+            print(i, diff)
+            print("Source cursor:", source_cursor, "diff index", diff.index)
+            print("in between part: ", self.source_tokens[source_cursor:diff.
+                                                       index])
             reconstructed_tokens += self.source_tokens[source_cursor:diff.
                                                        index]
             reconstructed_tokens += diff.new
             source_cursor = diff.index + len(diff.old)
 
+            if not reconstructed_tokens == self.dest_tokens[:len(reconstructed_tokens)]:
+                print("Encountered error at len, ", len(reconstructed_tokens))
+                with open('debug_reconstructed.txt', 'w') as f:
+                    f.write("\n".join(reconstructed_tokens))
+                with open('debug_dest.txt', 'w') as f:
+                    f.write("\n".join(self.dest_tokens[:len(reconstructed_tokens)]))
+                assert False
         reconstructed_tokens += self.source_tokens[source_cursor:]
-        assert reconstructed_tokens == self.dest_tokens
+
+

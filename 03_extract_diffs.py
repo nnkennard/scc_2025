@@ -5,11 +5,16 @@ import os
 import tqdm
 
 import scc_lib
-from diff_lib_2 import make_diffs
+from scc_diff_lib import DocumentDiff
 
 parser = argparse.ArgumentParser(description="")
 parser.add_argument("-d", "--data_dir", default="", type=str, help="")
 
+
+def generate_filenames(initial_text_file):
+    assert initial_text_file.endswith('initial.txt')
+    return (f'{initial_text_file[:-11]}final.txt',
+            f'{initial_text_file[:-11]}diffs.json')
 
 def read_sentencized(filename):
     with open(filename, "r") as f:
@@ -27,12 +32,16 @@ def main():
     args = parser.parse_args()
     for initial_filename in tqdm.tqdm(
             list(glob.glob(f"{args.data_dir}/*/initial.txt"))):
-        if not os.path.isfile(f'{initial_filename[:-11]}diffs.json'):
-            final_filename = f'{initial_filename[:-11]}final.txt'
-            diffs = make_diffs(get_tokens(initial_filename),
-                               get_tokens(final_filename))
-            with open(f'{initial_filename[:-11]}diffs.json', 'w') as f:
-                f.write(json.dumps(diffs, indent=2))
+
+        print(initial_filename)
+
+        final_filename, diff_file = generate_filenames(initial_filename)
+
+        if not os.path.isfile(diff_file):
+            d = DocumentDiff(get_tokens(initial_filename),
+                             get_tokens(final_filename))
+            with open(diff_file, 'w') as f:
+                f.write(d.dump())
 
 
 if __name__ == "__main__":
