@@ -20,8 +20,13 @@ parser.add_argument(
 )
 
 UNDER_REVIEW_RE = re.compile(
-    "Under review as a conference paper at ICLR 20[0-9]{2}\s")
-PUBLISHED_RE = re.compile("Published as a conference paper at ICLR 20[0-9]{2}\s")
+    "Under review as a conference paper at ICLR 20[0-9]{2}")
+PUBLISHED_RE = re.compile(
+"Published as a conference paper at ICLR 20[0-9]{2}")
+REFERENCE_START = re.compile("^R\s?EFERENCES")
+
+ABSTRACT = "ABSTRACT"
+REFERENCES = "REFERENCES"
 
 #TODO: find out what ABSTRACT_HEADER and SECTION_HEADER as supposed to do
 
@@ -46,13 +51,19 @@ def clean_file(filename):
     for line in lines:
         if not line:
             continue
-        if line.startswith("R EFERENCES") or line.startswith("REFERENCES"):
+        if ABSTRACT in line and not line.startswith(ABSTRACT):
+            before, after = re.split(ABSTRACT, line)
+            final_lines += [
+            before,
+            ABSTRACT + after]
+            continue
+        if line.startswith("R EFERENCES") or line.startswith(REFERENCES):
             # Typo fixed in 2022
             # References starting. We are done.
             break
         matched = False
         if boilerplate_re.match(line):
-            final_lines.append("".join(re.split(boilerplate_re, line)))
+            final_lines += re.split(boilerplate_re, line)
         else:
             final_lines.append(line)
 

@@ -5,7 +5,7 @@ import os
 import tqdm
 
 import scc_lib
-from diff_lib import make_diffs
+from diff_lib_2 import make_diffs
 
 parser = argparse.ArgumentParser(description="")
 parser.add_argument("-d", "--data_dir", default="", type=str, help="")

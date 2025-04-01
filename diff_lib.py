@@ -32,14 +32,14 @@ def check_reconstruction(initial_tokens, final_tokens, diff_map):
             i += 1
         else:
             diff = diff_map[i]
-            if diff.old is None:
+            if not diff.old:
                 # This is an insertion diff, insert after the token at this location
                 constructed_final_tokens.append(initial_tokens[i])
                 i += 1
             else:
                 # This is a deletion or modification diff. Skip some of initial tokens
                 i += len(diff.old)
-            if diff.new is not None:
+            if not diff.new:
                 # Insertion or modification diff. Add inserted tokens
                 constructed_final_tokens += list(diff.new)
 
@@ -134,8 +134,8 @@ def parse_myers_diff(myers_diff, block_start):
         # Create a Diff object anchored at this location
         diff_map[location] = Diff(
             location=location,
-            old=(tuple(tokens_deleted) if tokens_deleted else None),
-            new=(tuple(tokens_added) if tokens_added else None),
+            old=(tuple(tokens_deleted) if tokens_deleted else []),
+            new=(tuple(tokens_added) if tokens_added else []),
         )
     return diff_map
 
@@ -161,8 +161,8 @@ def get_myers_diffs(non_matching_blocks, initial_tokens, final_tokens,
             added_tokens = mini_final
             diff_map[block.a] = Diff(
                 location=block.a,
-                old=(tuple(deleted_tokens) if deleted_tokens else None),
-                new=(tuple(added_tokens) if added_tokens else None),
+                old=(tuple(deleted_tokens) if deleted_tokens else []),
+                new=(tuple(added_tokens) if added_tokens else []),
             )
     return diff_map
 
