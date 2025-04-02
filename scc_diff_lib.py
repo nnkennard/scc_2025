@@ -17,6 +17,7 @@ import re
 
 MATCHING_BLOCK = "MatchingBlock"
 NONMATCHING_BLOCK = "NonMatchingBlock"
+MAX_LEN = 2000
 
 MatchingBlock = collections.namedtuple(MATCHING_BLOCK, "a b l".split())
 NonMatchingBlock = collections.namedtuple(NONMATCHING_BLOCK,
@@ -101,48 +102,51 @@ class DocumentDiff(object):
     def _diff_within_block(self, block):
         """Convert nonmatching block into a diff."""
 
+        if block.l_b > MAX_LEN:
+            print("max len") 
+            return [Diff(block.a,
+            self.source_tokens[block.a:block.a + block.l_a],
+            self.dest_tokens[block.b:block.b + block.l_b])]
+
         myers_diff = myers.diff(
             self.source_tokens[block.a:block.a + block.l_a],
             self.dest_tokens[block.b:block.b + block.l_b])
 
-        print(" ".join(self.source_tokens[block.a:block.a + block.l_a]))
-        print(" ".join(self.dest_tokens[block.b:block.b + block.l_b]))
-        # Convert the actions in the myers diff into a string so that regex can
-        # be used
         diff_str = "".join(x[0] for x in myers_diff)
 
-        print("diff str len", len(diff_str))
-        print(diff_str)
+        indexed_myers_diff = []
+        original_index = block.a
+        for action, token in myers_diff:
+            indexed_myers_diff.append((original_index, action, token))
+            if action in 'kr':
+                original_index += 1
 
         diffs = []
-        in_block_index = 0
-        for m in re.finditer("([ir]+)|(k+)", diff_str):
+
+        for m in re.finditer("([ir]+)", diff_str):
             start, end = m.span()
-            if re.match('[ir]+', diff_str[start:end]):
-                inserted = []
-                removed = []
-                diff_index = block.a + in_block_index
-                for i in range(start, end):
-                    action, token = myers_diff[i]
-                    if action == 'i':
-                        inserted.append(token)
-                    else:
-                        removed.append(token)
-                if removed:
-                    print("Has removed tokens!!")
-                    diffs.append(Diff(diff_index, removed, inserted))
+            diff_substr = diff_str[start:end]
+            diff_anchor, _, _ = indexed_myers_diff[start]
+
+            inserted = []
+            removed = []
+
+            for i in range(start, end):
+                action, token = myers_diff[i]
+                if action == 'i':
+                    inserted.append(token)
                 else:
-                    print("No removed tokens!!")
-                    diff_index -= 1
-                    placeholder_token = self.source_tokens[diff_index]
-                    diffs.append(Diff(diff_index, [placeholder_token],
-                        [placeholder_token] + inserted))
-            elif re.match('k+', diff_str[start:end]):
-                in_block_index += (end - start)
-        for i in diffs:
-            print(i)
-            print("=" * 80)
-            print()
+                    removed.append(token)
+
+            if 'r' not in diff_substr:
+                # We have to do weird stuff
+                diff_anchor -= 1
+                anchor_token = self.source_tokens[diff_anchor]
+                diffs.append(Diff(diff_anchor,
+                                    [anchor_token] + removed,
+                                    [anchor_token] + inserted))
+            else:
+                diffs.append(Diff(diff_anchor, removed, inserted))
         return diffs
 
     def dump(self):
@@ -176,25 +180,14 @@ class DocumentDiff(object):
     def _reconstruct_from_diffs(self):
         reconstructed_tokens = []
         source_cursor = 0
-        print("Reconstructing from diffs")
-        print(len(self.diffs))
         for i, diff in enumerate(self.diffs):
-            print(i, diff)
-            print("Source cursor:", source_cursor, "diff index", diff.index)
-            print("in between part: ", self.source_tokens[source_cursor:diff.
-                                                       index])
             reconstructed_tokens += self.source_tokens[source_cursor:diff.
                                                        index]
             reconstructed_tokens += diff.new
             source_cursor = diff.index + len(diff.old)
 
-            if not reconstructed_tokens == self.dest_tokens[:len(reconstructed_tokens)]:
-                print("Encountered error at len, ", len(reconstructed_tokens))
-                with open('debug_reconstructed.txt', 'w') as f:
-                    f.write("\n".join(reconstructed_tokens))
-                with open('debug_dest.txt', 'w') as f:
-                    f.write("\n".join(self.dest_tokens[:len(reconstructed_tokens)]))
-                assert False
         reconstructed_tokens += self.source_tokens[source_cursor:]
 
+        if not reconstructed_tokens == self.dest_tokens:
+            assert False
 
