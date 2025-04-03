@@ -1,7 +1,6 @@
 """Use OpenReview API to get initial and final PDFs for ICLR submissions.
 """
 
-
 import argparse
 import collections
 import json
@@ -61,6 +60,7 @@ INVITATIONS = {
     for year in range(2018, 2025)
 }
 
+
 def is_review(note, conference):
     if conference == scc_lib.Conference.iclr_2023:
         return "Official_Review" in note.invitation
@@ -70,6 +70,7 @@ def is_review(note, conference):
         assert False
     else:
         return 'review' in note.content
+
 
 # == Other helpers ===========================================================
 
@@ -82,12 +83,15 @@ class ForumStatus(object):
     NO_REVIEWS = "no_reviews"
     NO_PDF = "no_pdf"
     NO_REVISION = "no_revision"
+    NO_DECISION = "no_decision"
+
 
 def first_not_none(l):
     for x in l:
         if x is not None:
             return x
-    assert False
+    return None
+
 
 # ============================================================================
 
@@ -122,12 +126,12 @@ def get_review_sentences_and_rating(note, conference):
     """Get raw review text. Review text field differs between years.
     """
     if conference == scc_lib.Conference.iclr_2023:
-        review_text = "\n".join(
-            [note.content[key]
-                for key in [
-                    "strengths_and_weaknesses"
-                    # TODO: find the other fields
-                ]])
+        review_text = "\n".join([
+            note.content[key] for key in [
+                "summary_of_the_paper",
+                "strength_and_weaknesses",
+                "clarity,_quality,_novelty_and_reproducibility",]
+                    ])
         rating = note.content['recommendation']
     elif conference == scc_lib.Conference.iclr_2022:
         review_text = note.content['main_review']
@@ -148,8 +152,8 @@ def write_metadata(forum_dir, forum, conference, initial_id, final_id,
                    decision, review_notes):
     reviews = []
     for review_note in review_notes:
-        review_sentences, rating = get_review_sentences_and_rating(review_note,
-        conference)
+        review_sentences, rating = get_review_sentences_and_rating(
+            review_note, conference)
         reviews.append(
             Review(review_note.id, review_sentences, rating,
                    export_signature(review_note),
@@ -180,14 +184,14 @@ def process_forum(forum, conference, output_dir):
     # Retrieve all reviews from the forum
     review_notes = [
         note for note in forum_notes if is_review(note, conference)
-        ]
-        # The conditions that make a note a review differ from year to year.
+    ]
+    # The conditions that make a note a review differ from year to year.
 
     # Retrieve decision
-    decision = first_not_none([
-        note.content.get('decision', None)
-        for note in forum_notes
-    ])
+    decision = first_not_none(
+        [note.content.get('decision', None) for note in forum_notes])
+    if decision is None:
+        return ForumStatus.NO_DECISION, "None"
 
     # e.g. If the paper was withdrawn
     if not review_notes:
@@ -252,39 +256,38 @@ def main():
     args = parser.parse_args()
 
     # A directory will be made for each paper submission under the output directory.
-    os.makedirs(args.output_dir, exist_ok=True)
+    final_dir = f'{args.output_dir}/{args.conference}/'
+    os.makedirs(final_dir, exist_ok=True)
 
-    statuses = []
-    
     # Gets top level notes for each `forum' (each paper submission is assigned
     # a forum)
     forum_notes = GUEST_CLIENT.get_all_notes(
         invitation=INVITATIONS[args.conference])
 
-    # Hack for --debug    
+    # Hack for --debug
     success_count = 0
 
-    for forum in tqdm.tqdm(forum_notes):
-        # Process a forum. As a side effect, write pdfs to directory.
-        status, decision = process_forum(forum, args.conference,
-                                          args.output_dir)
-        statuses.append((forum.id, status, decision))
-    
-        # === --debug stuff ===
-        if status == ForumStatus.COMPLETE:
-            success_count += 1
-        if args.debug and success_count == 10 or len(statuses) > 100:
-            break
-        # === end --debug stuff ===
 
+    status_file = f'{args.status_file_prefix}{args.conference}.tsv'
+    if not os.path.isfile(status_file):
+        with open(status_file, 'w') as f:
+            f.write('#Conference\tForum\tStatus\tDecision\n')
 
-    # Write all statuses to file.
-    # TODO: determine if useful to do while processing rather than at the end.
-    with open(f'{args.status_file_prefix}{args.conference}.tsv', 'w') as f:
-        f.write('#Conference\tForum\tStatus\tDecision\n')
-        for forum, status, decision in statuses:
+    with open(status_file, 'a') as f:
+        for forum in tqdm.tqdm(forum_notes):
+            if os.path.isfile(f'{final_dir}/{forum.id}/metadata.json'):
+                continue
+            # Process a forum. As a side effect, write pdfs to directory.
+            status, decision = process_forum(forum, args.conference,
+                                             final_dir)
             f.write(f'{args.conference}\t{forum}\t{status}\t{decision}\n')
 
+            # === --debug stuff ===
+            if status == ForumStatus.COMPLETE:
+                success_count += 1
+            if args.debug and (success_count == 10 or len(statuses) > 100):
+                break
+            # === end --debug stuff ===
 
 if __name__ == "__main__":
     main()

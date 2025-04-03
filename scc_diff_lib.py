@@ -67,7 +67,7 @@ class DocumentDiff(object):
         matching_blocks = difflib.SequenceMatcher(
             None, self.source_tokens, self.dest_tokens).get_matching_blocks()
 
-        blocks = [] # Alternating matching and nonmatching blocks
+        blocks = []  # Alternating matching and nonmatching blocks
 
         # Special treatment for first block
         first_matching_block = matching_blocks[0]
@@ -93,9 +93,7 @@ class DocumentDiff(object):
                 NonMatchingBlock(source_cursor, dest_cursor,
                                  source_nonmatching_len, dest_nonmatching_len))
 
-
         final_blocks = []
-
 
         return blocks
 
@@ -103,17 +101,20 @@ class DocumentDiff(object):
         """Convert nonmatching block into a diff."""
 
         if block.l_b > MAX_LEN:
-            print("max len") 
-            return [Diff(block.a,
-            self.source_tokens[block.a:block.a + block.l_a],
-            self.dest_tokens[block.b:block.b + block.l_b])]
+            # This diff adds many characters. It's likely to be something like
+            # an appendix being added. We just convert the block into one large
+            # diff.
+            return [
+                Diff(block.a, self.source_tokens[block.a:block.a + block.l_a],
+                     self.dest_tokens[block.b:block.b + block.l_b])
+            ]
 
         myers_diff = myers.diff(
             self.source_tokens[block.a:block.a + block.l_a],
             self.dest_tokens[block.b:block.b + block.l_b])
 
-        diff_str = "".join(x[0] for x in myers_diff)
-
+        # In our method of diff naming, each diff needs to be anchored to an
+        # index in the source sequence. The anchors are collected below.
         indexed_myers_diff = []
         original_index = block.a
         for action, token in myers_diff:
@@ -122,8 +123,10 @@ class DocumentDiff(object):
                 original_index += 1
 
         diffs = []
+        diff_str = "".join(x[0] for x in myers_diff)
 
         for m in re.finditer("([ir]+)", diff_str):
+            # A sequence of non-keep actions (inserts and removes)
             start, end = m.span()
             diff_substr = diff_str[start:end]
             diff_anchor, _, _ = indexed_myers_diff[start]
@@ -139,12 +142,14 @@ class DocumentDiff(object):
                     removed.append(token)
 
             if 'r' not in diff_substr:
-                # We have to do weird stuff
+                # This diff has only removes, so it has nothing to anchor to in
+                # the source sequence. We artificially remove and reinsert the
+                # token just before the diff.
                 diff_anchor -= 1
                 anchor_token = self.source_tokens[diff_anchor]
-                diffs.append(Diff(diff_anchor,
-                                    [anchor_token] + removed,
-                                    [anchor_token] + inserted))
+                diffs.append(
+                    Diff(diff_anchor, [anchor_token] + removed,
+                         [anchor_token] + inserted))
             else:
                 diffs.append(Diff(diff_anchor, removed, inserted))
         return diffs
@@ -190,4 +195,3 @@ class DocumentDiff(object):
 
         if not reconstructed_tokens == self.dest_tokens:
             assert False
-

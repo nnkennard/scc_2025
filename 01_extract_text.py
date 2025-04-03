@@ -25,12 +25,20 @@ def extract_text(pdf_path):
                             capture_output=True).stdout
     # TODO: check for errors
 
-    return (output.decode( # Clean up whitespace quirks
-        ).replace("-\n", ""             # remove hyphenations
-        ).replace("\n\n", PLACEHOLDER   # placeholder for real newlines
-        ).replace("\n", " "             # remove line breaks
-        ).replace(PLACEHOLDER, "\n\n"   # restore real newlines
-        ))
+    return (output.decode(  # Clean up whitespace quirks
+    ).replace(
+        "-\n",
+        ""  # remove hyphenations
+    ).replace(
+        "\n\n",
+        PLACEHOLDER  # placeholder for real newlines
+    ).replace(
+        "\n",
+        " "  # remove line breaks
+    ).replace(
+        PLACEHOLDER,
+        "\n\n"  # restore real newlines
+    ))
 
 
 def main():

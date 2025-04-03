@@ -16,6 +16,7 @@ def generate_filenames(initial_text_file):
     return (f'{initial_text_file[:-11]}final.txt',
             f'{initial_text_file[:-11]}diffs.json')
 
+
 def read_sentencized(filename):
     with open(filename, "r") as f:
         return [line.split() for line in f.readlines()]

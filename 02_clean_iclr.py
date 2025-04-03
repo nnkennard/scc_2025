@@ -21,8 +21,8 @@ parser.add_argument(
 
 UNDER_REVIEW_RE = re.compile(
     "Under review as a conference paper at ICLR 20[0-9]{2}")
-PUBLISHED_RE = re.compile(
-"Published as a conference paper at ICLR 20[0-9]{2}")
+    #Under review as a conference paper at ICLR 2022 
+PUBLISHED_RE = re.compile("Published as a conference paper at ICLR 20[0-9]{2}")
 REFERENCE_START = re.compile("^R\s?EFERENCES")
 
 ABSTRACT = "ABSTRACT"
@@ -51,12 +51,6 @@ def clean_file(filename):
     for line in lines:
         if not line:
             continue
-        if ABSTRACT in line and not line.startswith(ABSTRACT):
-            before, after = re.split(ABSTRACT, line)
-            final_lines += [
-            before,
-            ABSTRACT + after]
-            continue
         if line.startswith("R EFERENCES") or line.startswith(REFERENCES):
             # Typo fixed in 2022
             # References starting. We are done.
@@ -64,6 +58,9 @@ def clean_file(filename):
         matched = False
         if boilerplate_re.match(line):
             final_lines += re.split(boilerplate_re, line)
+        elif ABSTRACT in line and not line.startswith(ABSTRACT):
+            before, after = re.split(ABSTRACT, line)
+            final_lines += [before, ABSTRACT + after]
         else:
             final_lines.append(line)
 
@@ -73,7 +70,6 @@ def clean_file(filename):
 def main():
     args = parser.parse_args()
     for filename in tqdm.tqdm(list(glob.glob(f'{args.data_dir}/*/*_raw.txt'))):
-        print(filename)
         with open(filename.replace("_raw", ""), 'w') as f:
             f.write(clean_file(filename))
 
