@@ -10,6 +10,8 @@ import sys
 import re
 import tqdm
 
+import scc_lib
+
 parser = argparse.ArgumentParser(description="")
 parser.add_argument(
     "-d",
@@ -18,6 +20,13 @@ parser.add_argument(
     type=str,
     help="Data dir",
 )
+parser.add_argument("-c",
+                    "--conference",
+                    type=str,
+                    choices=scc_lib.Conference.ALL,
+                    help="conference_year, e.g. iclr_2022",
+                    required=True)
+
 
 UNDER_REVIEW_RE = re.compile(
     "Under review as a conference paper at ICLR 20[0-9]{2}")
@@ -69,7 +78,8 @@ def clean_file(filename):
 
 def main():
     args = parser.parse_args()
-    for filename in tqdm.tqdm(list(glob.glob(f'{args.data_dir}/*/*_raw.txt'))):
+    for filename in
+    tqdm.tqdm(list(glob.glob(f'{args.data_dir}/{args.conference}/*/*_raw.txt'))):
         with open(filename.replace("_raw", ""), 'w') as f:
             f.write(clean_file(filename))
 

@@ -8,8 +8,13 @@ import scc_lib
 from scc_diff_lib import DocumentDiff
 
 parser = argparse.ArgumentParser(description="")
-parser.add_argument("-d", "--data_dir", default="", type=str, help="")
-
+parser.add_argument("-d", "--data_dir", default="", type=str, help
+parser.add_argument("-c",
+                    "--conference",
+                    type=str,
+                    choices=scc_lib.Conference.ALL,
+                    help="conference_year, e.g. iclr_2022",
+                    required=True)
 
 def generate_filenames(initial_text_file):
     assert initial_text_file.endswith('initial.txt')
@@ -32,9 +37,7 @@ def get_tokens(filename):
 def main():
     args = parser.parse_args()
     for initial_filename in tqdm.tqdm(
-            list(glob.glob(f"{args.data_dir}/*/initial.txt"))):
-
-        print(initial_filename)
+            list(glob.glob(f"{args.data_dir}/{args.conference}/*/initial.txt"))):
 
         final_filename, diff_file = generate_filenames(initial_filename)
 
