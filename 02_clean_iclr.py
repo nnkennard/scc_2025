@@ -21,7 +21,7 @@ parser.add_argument(
 
 UNDER_REVIEW_RE = re.compile(
     "Under review as a conference paper at ICLR 20[0-9]{2}")
-    #Under review as a conference paper at ICLR 2022 
+#Under review as a conference paper at ICLR 2022
 PUBLISHED_RE = re.compile("Published as a conference paper at ICLR 20[0-9]{2}")
 REFERENCE_START = re.compile("^R\s?EFERENCES")
 

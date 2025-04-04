@@ -130,8 +130,9 @@ def get_review_sentences_and_rating(note, conference):
             note.content[key] for key in [
                 "summary_of_the_paper",
                 "strength_and_weaknesses",
-                "clarity,_quality,_novelty_and_reproducibility",]
-                    ])
+                "clarity,_quality,_novelty_and_reproducibility",
+            ]
+        ])
         rating = note.content['recommendation']
     elif conference == scc_lib.Conference.iclr_2022:
         review_text = note.content['main_review']
@@ -188,8 +189,10 @@ def process_forum(forum, conference, output_dir):
     # The conditions that make a note a review differ from year to year.
 
     # Retrieve decision
-    decision = first_not_none(
-        [note.content.get('decision', None) for note in forum_notes])
+    decision = first_not_none([
+        note.content.get('decision', note.content.get('recommendation', None))
+        for note in forum_notes
+    ])
     if decision is None:
         return ForumStatus.NO_DECISION, "None"
 
@@ -267,7 +270,6 @@ def main():
     # Hack for --debug
     success_count = 0
 
-
     status_file = f'{args.status_file_prefix}{args.conference}.tsv'
     if not os.path.isfile(status_file):
         with open(status_file, 'w') as f:
@@ -278,9 +280,8 @@ def main():
             if os.path.isfile(f'{final_dir}/{forum.id}/metadata.json'):
                 continue
             # Process a forum. As a side effect, write pdfs to directory.
-            status, decision = process_forum(forum, args.conference,
-                                             final_dir)
-            f.write(f'{args.conference}\t{forum}\t{status}\t{decision}\n')
+            status, decision = process_forum(forum, args.conference, final_dir)
+            f.write(f'{args.conference}\t{forum.id}\t{status}\t{decision}\n')
 
             # === --debug stuff ===
             if status == ForumStatus.COMPLETE:
@@ -288,6 +289,9 @@ def main():
             if args.debug and (success_count == 10 or len(statuses) > 100):
                 break
             # === end --debug stuff ===
+            if success_count % 10 == 0:
+                f.flush()
+
 
 if __name__ == "__main__":
     main()
