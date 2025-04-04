@@ -286,7 +286,7 @@ def main():
             # === --debug stuff ===
             if status == ForumStatus.COMPLETE:
                 success_count += 1
-            if args.debug and (success_count == 10 or len(statuses) > 100):
+            if args.debug and success_count == 10:
                 break
             # === end --debug stuff ===
             if success_count % 10 == 0:
