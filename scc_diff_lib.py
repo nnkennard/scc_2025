@@ -14,10 +14,12 @@ import difflib
 import json
 import myers
 import re
+import sys
+import tqdm
 
 MATCHING_BLOCK = "MatchingBlock"
 NONMATCHING_BLOCK = "NonMatchingBlock"
-MAX_LEN = 2000
+MAX_LEN = 3000
 
 MatchingBlock = collections.namedtuple(MATCHING_BLOCK, "a b l".split())
 NonMatchingBlock = collections.namedtuple(NONMATCHING_BLOCK,
@@ -31,41 +33,47 @@ def flatten_sentences(sentences):
 
 class DocumentDiff(object):
 
-    def __init__(self, unflat_source_tokens, unflat_dest_tokens):
+    def __init__(self, unflat_source_tokens, unflat_dest_tokens, forum):
         # Saving these, but they are only used for output
         self.source_unflat = unflat_source_tokens
         self.dest_unflat = unflat_dest_tokens
+        self.forum = forum
         # Flattened tokens are used in the diff calculations
         self.source_tokens = flatten_sentences(unflat_source_tokens)
         self.dest_tokens = flatten_sentences(unflat_dest_tokens)
 
-        with open('debug_source_tokens.txt', 'w') as f:
-            f.write("\n".join(self.source_tokens))
-        with open('debug_dest_tokens.txt', 'w') as f:
-            f.write("\n".join(self.dest_tokens))
+        #with open('debug_source_tokens.txt', 'w') as f:
+        #    f.write("\n".join(self.source_tokens))
+        #with open('debug_dest_tokens.txt', 'w') as f:
+        #    f.write("\n".join(self.dest_tokens))
 
         self.calculate()
 
     def calculate(self):
+        #print("calculating")
         self.diffs = []
 
         # Get matching and nonmatching blocks, then verify block calculation
         self.blocks = self._get_matching_blocks()
         self._reconstruct_from_blocks()
-
+        #print("starting myers", len(self.blocks))
         # Convert each nonmatching block into diffs
+        #for block in tqdm.tqdm(self.blocks):
         for block in self.blocks:
             if isinstance(block, NonMatchingBlock):
                 self.diffs += self._diff_within_block(block)
 
+        #print("verifying")
         # Verify diff calculation
         self._reconstruct_from_diffs()
 
     def _get_matching_blocks(self):
         """Get maximal matching blocks and calculate nonmatching blocks.
         """
+        #print("start matching blocks")
         matching_blocks = difflib.SequenceMatcher(
             None, self.source_tokens, self.dest_tokens).get_matching_blocks()
+        #print("done matching blocks")
 
         blocks = []  # Alternating matching and nonmatching blocks
 
@@ -100,7 +108,9 @@ class DocumentDiff(object):
     def _diff_within_block(self, block):
         """Convert nonmatching block into a diff."""
 
-        if block.l_b > MAX_LEN:
+        #print(block.l_b)
+        if block.l_b + block.l_a > MAX_LEN:
+            print(f"Skipped large block in {self.forum}")
             # This diff adds many characters. It's likely to be something like
             # an appendix being added. We just convert the block into one large
             # diff.
@@ -155,15 +165,18 @@ class DocumentDiff(object):
         return diffs
 
     def dump(self):
-        return json.dumps(
-            {
-                "tokens": {
-                    "source": self.source_unflat,
-                    "dest": self.dest_unflat
+        if self.is_valid:
+            return json.dumps(
+                {
+                    "tokens": {
+                        "source": self.source_unflat,
+                        "dest": self.dest_unflat
+                    },
+                    "diffs": [d._asdict() for d in self.diffs]
                 },
-                "diffs": [d._asdict() for d in self.diffs]
-            },
-            indent=2)
+                indent=2)
+        else:
+            return ""
 
     # ======= Reconstruction methods below ====================================
     # These methods are used to check for bugs in the diff logic.
@@ -194,4 +207,7 @@ class DocumentDiff(object):
         reconstructed_tokens += self.source_tokens[source_cursor:]
 
         if not reconstructed_tokens == self.dest_tokens:
-            assert False
+            print(f"Error reconstructing: {self.forum}")
+            self.is_valid = False
+        else:
+            self.is_valid = True

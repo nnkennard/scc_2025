@@ -27,7 +27,6 @@ parser.add_argument("-c",
                     help="conference_year, e.g. iclr_2022",
                     required=True)
 
-
 UNDER_REVIEW_RE = re.compile(
     "Under review as a conference paper at ICLR 20[0-9]{2}")
 #Under review as a conference paper at ICLR 2022
@@ -44,6 +43,8 @@ def clean_file(filename):
 
     with open(filename, 'r') as f:
         lines = [line.strip() for line in f.readlines()]
+
+    boilerplate_re = None  # Sometimes this doesn't match anywhere?
 
     # Figure out what the boilerplate line is. For rejected papers, the final
     # pdf may still be 'Under review'.
@@ -65,11 +66,14 @@ def clean_file(filename):
             # References starting. We are done.
             break
         matched = False
-        if boilerplate_re.match(line):
+        if boilerplate_re is not None and boilerplate_re.match(line):
             final_lines += re.split(boilerplate_re, line)
         elif ABSTRACT in line and not line.startswith(ABSTRACT):
-            before, after = re.split(ABSTRACT, line)
-            final_lines += [before, ABSTRACT + after]
+            try:
+                before, after = re.split(ABSTRACT, line)
+                final_lines += [before, ABSTRACT + after]
+            except ValueError:
+                final_lines.append(line)
         else:
             final_lines.append(line)
 
@@ -78,8 +82,8 @@ def clean_file(filename):
 
 def main():
     args = parser.parse_args()
-    for filename in
-    tqdm.tqdm(list(glob.glob(f'{args.data_dir}/{args.conference}/*/*_raw.txt'))):
+    for filename in tqdm.tqdm(
+            list(glob.glob(f'{args.data_dir}/{args.conference}/*/*_raw.txt'))):
         with open(filename.replace("_raw", ""), 'w') as f:
             f.write(clean_file(filename))
 

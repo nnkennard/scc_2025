@@ -39,18 +39,18 @@ def extract_text(pdf_path):
     if output.startswith(ERROR_PREFIX):
         return None
 
-    return (output.replace(     # clean up whitespace
+    return (output.replace(  # clean up whitespace
         "-\n",
-        ""                      # remove hyphenations
+        ""  # remove hyphenations
     ).replace(
         "\n\n",
-        PLACEHOLDER             # placeholder for real newlines
+        PLACEHOLDER  # placeholder for real newlines
     ).replace(
         "\n",
-        " "                     # remove line breaks
+        " "  # remove line breaks
     ).replace(
         PLACEHOLDER,
-        "\n\n"                  # restore real newlines
+        "\n\n"  # restore real newlines
     ))
 
 
