@@ -1,0 +1,624 @@
+
+ BASELINECORRECTED SPACE-BY-TIME NON-NEGATIVE MATRIX FACTORIZATION FOR DECODING SINGLE TRIAL POPULATION SPIKE TRAINS Anonymous authors Paper under doubleblind review ABSTRACT Activity of populations of sensory neurons carries stimulus information in both the temporal and the spatial dimensions. This poses the question of how to compactly represent all the information that the population codes carry across all these dimensions. Here, we developed an analytical method to factorize a large number of retinal ganglion cells’ spike trains into a robust lowdimensional representation that captures efﬁciently both their spatial and temporal information. In particular, we extended previously used singletrial space-by-time tensor decomposition based on nonnegative matrix factorization to efﬁciently discount prestimulus baseline activity. On data recorded from retinal ganglion cells with strong prestimulus baseline, we showed that in situations where the stimulus elicits a strong change in ﬁring rate, our extensions yield a boost in stimulus decoding performance. Our results thus suggest that taking into account the baseline can be important for ﬁnding a compact informationrich representation of neural activity. 1 INTRODUCTION Populations of neurons encode sensory stimuli across the time dimension ( temporal variations), the space dimension (different neuron identities) , or along combinations of both dimensions (Buonomano & Maass, 2009; Panzeri et al. , 2010; 2015; Harvey et al. , 2012; Runyan et al. , 2017). Consequently, understanding the neural code requires characterizing the ﬁring patterns along these dimensions and linking them to the stimuli ( Abeles & Gerstein, 1988; Haefner et al. , 2013; Panzeri et al. , 2015; Pouget et al. , 2000; Kristan & Shaw, 1997). There are many methods for compactly representing neural activity along their most relevant dimensions. These methods include Principal Component Analysis ( PCA), Independent Component Analysis (ICA) and Factor Analysis ( FA) (Churchland et al. , 2010; Cunningham & Byron, 2014; Laubach et al. , 1999; Shen & Meyer, 2008). Recently, a particularly promising tensor decomposition method was introduced that provides a compact representation of single trial neuronal activity into spatial and temporal dimensions and their combination in the given trial ( Onken et al. , 2016). The method is based on non-negative matrix factorization ( NMF) (Lee & Seung, 1999; Devarajan, 2008; Smaragdis et al. , 2014) which imposes non-negativity constraints on the extracted components leading to a partsbased, low dimensional, though ﬂexible representation of the data, only assuming non-negativity of the model components. Though space-by-time NMF yielded robust decoding performance with a small number of parameters and good biological interpretability of its basis functions on data recorded from salamander retinal ganglion cells, the method does have a potential shortcoming: it cannot explicitly discount, and is partly confounded by, baseline activity that is not relevant for the neural response to a sensory stimulus. Although these non-negative tensor factorizations performed well on salamander retinal ganglion cells, which have almost non-existent spontaneous activity ( Delis et al. , 2016), it is not clear how well the method would perform on data with considerable spontaneous activity, which might require to explicitly correct for the prestimulus baseline. One way to reduce the baseline would be to subtract it from the stimuluselicited response. This, however, would result in negative activities that cannot be modeled using a decomposition with full nonnegativity constraints such as space-by-time NMF. In this study, we thus propose a variant of spaceby-time NMF that discounts the baseline activity by subtracting the prestimulus baseline from each trial and then decomposes the baselinecorrected activity using a tri-factorization that 1
+
+
+ﬁnds non-negative spatial and temporal modules, and signed activation coefﬁcients. We explored the beneﬁts that this method provides on data recorded from mouse and pig retinal ganglion cells and showed that baselinecorrected space-by-time NMF improves decoding performance on data with nonnegligible baselines and stimulus response changes.
+2 METHODS
+We consider data that are composed of trials of spiking activity recorded simultaneously from a population of neurons in response to sensory stimuli. Each trial thus has a temporal component (when is a neuron ﬁring) and a spatial component (which neuron is ﬁring). We aim to ﬁnd a decomposition into spatial and temporal ﬁring patterns and into coefﬁcients that represent the strength of spatial and temporal ﬁring combinations within a given trial. Before decomposing the data, we discretize neural activity by binning the spike trains into time intervals ( chosen to maximize decoding performance, c.f. supplementary Fig. S1) and counting the number of spikes in each bin. We then apply two different tensor decomposition methods that separate the spatial and temporal dimensions. We describe both methods in the following sections.
+2. 1 SPACE-BY-TIME NON-NEGATIVE TENSOR DECOMPOSITION
+Following Onken et al. (2016), we decomposed neural activity into spatial and temporal patterns and their activation coefﬁcients. The decomposition of a trial s takes the following form:
+Rs = BtemHsBspa + residual
+(1)
+where Rs denotes the population spike count matrix on trial s across T time bins and N recorded neurons, Btem denotes a (T × P )-matrix whose columns are the temporal modules, Bspa is a (L × N )matrix whose rows are the spatial modules and Hs is a (P × L)-coefﬁcient matrix that contains the weights of each combination of spatial and temporal modules. Note that the spatial and temporal modules are trialindependent whereas the activation coefﬁcients Hs are trialdependent.
+The main goal of the above decomposition is to factorize the input signal into invariant spatial and temporal patterns across trials such that the factorization minimizes the total reconstruction error. Following Onken et al. (2016), we used Space-by-Time Non-negative Matrix Factorization ( SbT-NMF, corresponding to the Tucker-2 tensor decomposition with nonnegativity constraints) to ﬁnd the factors of Eq. 1. The algorithm decomposes the input tensor R into nonnegative temporal modules Btem, non-negative spatial modules Bspa and nonnegative activation coefﬁcient using multiplicative update rule to minimize the Frobenius norm of the difference between the input data and the reconstruction data s=1 S ||Rs − BtemHsBspa| |2. On data recorded from salamander retinal ganglion cells the algorithm was shown to provide lowdimensional datarobust representations of spike trains that capture efﬁciently both their spatial and temporal information about sensory stimuli ( Onken et al. , 2016).
+2. 2 BASELINE-CORRECTED SPACE-BY-TIME NON-NEGATIVE TENSOR DECOMPOSITION To discount baseline activity from neural data, here we propose a novel decomposition algorithm termed BaselineCorrected Space-by-Time Non-negative Matrix Factorization ( BC-SbT-NMF) that ﬁrst subtracts the baseline from the neural activity and then factorizes the activity into spatial and temporal modules and activation coefﬁcients. Contrary to the original population spike counts, the baseline-corrected data are not necessarily nonnegative anymore after baseline subraction. Our decomposition method therefore faces the problem of factorizing signed data. For this purpose, our factorization algorithm decomposes the neural activity into nonnegative spatial and temporal modules and signed activation coefﬁcients, corresponding to a Tucker-2 tensor decomposition with nonnegativity constrained factor matrices and unconstrained core. The method is illustrated in Figure 1. Each trial consists of spatio-temporal binned spike counts of a population of neurons. For each neuron, we subtract the pre-stimulus ﬁring rate baseline in the same trial from its activity. We then decompose the baseline-corrected trials into spatiotemporal modules representing common ﬁring patterns and corresponding activation coefﬁcients representing the activity of a particular pattern in a trial. The spatio-temporal patterns in turn are factorized
+2
+
+ into spatial modules representing coactive neurons and temporal modules representing temporal population activity patterns.
+Figure 1: Baseline-corrected space-by-time non-negative matrix factorization. On the left, two trials with spike counts recorded from 5 neurons and 9 time points each are illustrated as a spike count word matrix. The pre-stimulus baseline is subtracted from the spike count word matrix in order to discount the baseline. Then, the signed corrected activity is decomposed into nonnegative spatial modules describing coactive neurons, non-negative temporal modules describing the temporal response proﬁle of the population and signed activation coefﬁcient. Each pair of spatial and temporal modules can be combined to form a spatiotemporal module.
+The algorithm estimates modules using iterative update rules to minimize the Frobenius norm of the difference between input data and the reconstructed data. Our derivation follows the derivation of semi-NMF presented in Ding et al. (2010), but extends the derivation to a trial-based trifactorization where two of the factors are non-negative and trialindependent and one factor is signed and trialdependent. Relaxation of the constraints for the activation coefﬁcients yields spatial and temporal modules that are less sparse. To counteract this, we also included L1-regularization for the spatial and temporal modules in our derivation following Hoyer ( 2004). Our objective function takes the form:
+S
+E2 =
+||Rs − BtemHsBspa||2 + λ [Btem]ik + λ [Bspa]ik
+(2)
+s=1
+i,k
+i,k
+S
+=
+Tr Rs Rs − 2Rs BtemHsBspa + BspaHs BtemBtemHsBspa
+(3)
+s=1
++λ [Btem]ik + λ [Bspa]ik,
+i,k
+i,k
+where λ ≥ 0 denotes the regularization parameter. For simplicity, we used the same parameter for the spatial and the temporal modules, but one could also have separate parameters. We derived iterative update steps for Bspa, Btem and H to minimize our objective function. We started with the derivation of an iterative update step for Bspa. To cast the tensor factorization of the (T × N × S) tensor R as a matrix trifactorization, we ﬁrst reshaped R by concatenating all slices Rs along the ﬁrst tensor dimension. This yields a data matrix Rspa of size (ST × N ). Analogously, we represented the (P × L × S) tensor H of activation coefﬁcients as a (SP × L) matrix Hspa. This procedure allows us to formulate a single Lagrangian with regard to Bspa:
+L(Bspa) = Tr −2RspaBtemHspaBspa + BspaHspaBtemBtemHspaBspa − βBspa + λ [Bspa]ik (4) i,k
+3
+
+
+where the Lagrangian multipliers βij enforce non-negativity constraints [ Bspa]ij ≥ 0. With the zero-gradient condition, we get: ∂L ∂Bspa = −2Rs BtemHspa + 2BspaHs BtemBtemHspa − β + λ = 0 ( 5)
+The complementary slackness condition then yields:
+−2RspaBtemHspa + 2BspaHspaBtemBtemHspa + λ ik [Bspa] ik = βik[Bspa]ik = 0
+(6)
+In this equation, the parts RspaBtemHspa and HspaBtemBtemHspa are signed. To derive update rules for the non-negative spatial modules, we therefore need to separate positive and negative parts of the equation. For a matrix A, we denoted its positive and negative parts as Aik + = (|Aik| + Aik)/2 and Aik − = (|Aik| − Aik)/2. With this deﬁnition, the identity A = A+ − A− holds. Separating the positive and negative parts of Eq. 6 by means of this identity, we obtained:
+[−2((RspaBtemHspa)+ − (RspaBtemHspa)−) + λ + 2((BspaHspaBtemBtemHspa) + − (BspaHspaBtemBtemHspa)−)]ik[Bspa]ik = βik[Bspa] ik = 0 (7) At convergence, we have Bspa (∞) = Bspa ( t+1) = Bspa (t). Hence, we obtain the following update step for Bspa:
+[(RspaBtemHspa)+]ij + [Bspa(HspaBtemBtemHspa)−]ij
+[Bspa]ij ← [Bspa]ij
+−
++
+(8)
+[(RspaBtemHspa) ]ij + [Bspa(HspaBtemBtemHspa) ]ij + λ
+To derive the update step for Btem, we analogously reshaped R by concatenating all slices Rs along the second tensor dimension to get a data matrix Rtem of size ( T × SN ) and we represented the (P × L × S) tensor H of activation coefﬁcients as a (P × SL) matrix Htem. The analogous derivation steps as for the spatial modules then yield the update step for Btem:
+[(HtemBspaRtem)+]ij + [Btem(HtemBspaBspaHtem)−]ij
+[Btem]ij ← [Btem]ij
+−
++
+(9)
+[(HtemBspaRtem) ]ij + [Btem(HtemBspaBspaHtem) ]ij + λ
+Finally, we updated the activation coefﬁcients H on a trialby-trial basis. The activation coefﬁcients are signed. For this reason, we can easily obtain the optimal activation coefﬁcient matrices by inverting the module matrices. For each s ∈ {1, . . . , S}, we let
+Hs ← Btem −1RsBspa −1
+(10)
+where (·)−1 denotes the Moore-Penrose pseudo-inverse. The complete baseline-corrected space-by-time NMF algorithm takes the following form:
+1. For each neuron i, calculate the pre-stimulus ﬁring rate bi and subtract it from the corresponding elements of the data tensor: ∀i ∈ {1, . . . , N } : R:,i,: → R:,i,: − bi. 2. Initialize Btem (T × P ), Bspa (L × N ) with nonnegative random numbers uniformly distributed between 0 and 1, and H (P × L × S) with random numbers uniformly distributed between 1 and 1. 3. Given H, Btem and the data matrix R (T × N × S), update Bspa: (a) Reshape R → Rspa (ST × N ) and H → Hspa (SP × L). (b) Update Bspa using Eq. 8 4. Given H, Bspa and the data matrix R (T × N × S), update Btem: (a) Reshape R → Rtem (T × SN ) and H → Htem (P × LN ) .
+4
+
+
+(b) Update Btem using Eq. 9.
+5. Given Btem and Bspa:
+(a) For all s ∈ 1, ..., S, update Hs using Eq. 10.
+6. If decrease in approximation error stop. Otherwise, go to step 3.
+S s=1
+||Rs
+−
+BtemHsBspa||2
+is
+below
+a
+given
+tolerance,
+We provide MATLAB code for this algorithm at the following GitHub repository ( TO BE ADDED TO THE FINAL VERSION UPON ACCEPTANCE).
+2. 3 DECODING ANALYSIS To evaluate the performance of the factorization algorithms to extract an informative lowdimensional representation of the neural data, we used multi class linear discriminant analysis ( LDA) applied to the activation coefﬁcients Hs (nonnegative in the case of space-by-time NMF and signed in the case of baselinecorrected space-by-time NMF) as predictors. For each experiment, we randomly separated trials into two sets of equal size: training set and test set and then applied the decomposition methods to the training set to obtain nonnegative spatial and temporal modules and related activation coefﬁcient. For ﬁxed spatial and temporal modules, we then also applied the decomposition methods to the corresponding test set trials to compute activation coefﬁcient given the training set modules. Finally, for each experiment and each decomposition method, we trained LDA classiﬁers on the training set activation coefﬁcients and evaluated the test set decoding performance on the test set activation coefﬁcients. The decomposition methods have three free parameters: the number of spatial modules, the number of temporal modules and the L1-regularization parameter λ. We decomposed the data and evaluated decoding performance for each possible combination of the module number parameters, where we used as the maximum number of spatial module the number of recorded neurons and we used as the maximum number of temporal module the number of time bins per trial, and at ﬁrst setting the regularization parameter to zero. For each experiment and each decomposition method, we then selected the pair of spatial and temporal module numbers that maximized decoding performance. Whenever we found more than one pair that reached optimal decoding performance, we selected the pair with the minimum sum of module numbers. For these optimal module numbers, we then explored the effect of λ and did not ﬁnd an increase in decoding performance for any nonzero λ Fig. S3). For this reason, we report all results for λ = 0.
+2. 4 EXPERIMENTAL SETUP AND DATASETS We used multi-electrode arrays to record activity from populations of retinal ganglion cells of two mouse retinas ( retinas 1 and 2) and one pig retina (retina 3) in scotopic lightlevel conditions. The experimental procedures were in accordance with international standards for animal research and were approved by the local ethical commitee and the local authorities, with experimental procedures following what detailed in a previous publication ( DETAILS OF ETHICAL APPROVAL AND CITATION WILL BE PROVIDED UPON ACCEPTANCE) . We recorded simultaneously from 30, 43 and 56 neurons, respectively, using the following ﬁve stimulation protocols: Natural movies, dance and mouse (NMD, NMM): Two kinds of black and white movies were used for visual stimulation. The ﬁrst one was a natural movie from the viewpoint of the mouse and the second movie was a clip showing a dancing couple. The dance movie was projected 44 times for one retina while the movie from the viewpoint of mouse was projected 44 times for the two other retinas. Full-ﬁeld high and low contrast ﬂicker (HC, LC) : Screenbrightness values were picked from a Gaussian distribution with mean 30 and standard deviation of 9 for high contrast and 3. 5 for low contrast ﬂicker with a range of values between 0 and 60 for hight contrast and a range of values between 20 and 40 for low contrast ﬂicker. Both stimuli were projected 10 times for three retina. Full-ﬁeld steps of light (SoL) : Homogeneous illuminated screen with the following brightness sequence was presented: gray (pixel value 30) – white (pixel value 50) – gray ( pixel value 30) – black (pixel value 10) – gray (pixel value 30) . This stimulus was projected 10 times for three retinas.
+5
+
+ To deﬁne stimulus classes, we cut each continuous stimulus into 1 second intervals and associated a running number with each interval. We then randomly divided each dataset by putting half of the trials of each class into a training trials to compute the decompositions modules and to train the decoder, and the other half of the trials into a test set to evaluate the decoding performance. 3 RESULTS To evaluate the beneﬁts of taking the prestimulus baseline ﬁring rate into account when looking for trialinvariant spatial and temporal ﬁring patterns, we ﬁrst discretized spike train with the time interval that gives highest decoding performance and then decoded retinal ganglion cell responses with and without explicitly taking the baseline into account. More precisely, we obtained lowdimensional representations of mammalian ganglion cell activity using spaceby-time NMF and baseline-corrected space-by-time NMF and then used an LDAclassiﬁer to decode the visual stimuli from these representations ( c.f. Section Methods). 3. 1 SPACE-BY-TIME DECOMPOSITION OF DATA RECORDED FROM MAMMALIAN RETINAL GANGLION CELLS We ﬁrst explored the lowdimensional representations of the neural populations responses that SbTNMF and BCSbT-NMF found. Both methods identiﬁed non-negative spatial and temporal modules. The activation coefﬁcients, however, were non-negative only in the case of SbTNMF, and signed in the case of BC-SbT-NMF. Figure 2 shows example modules obtained from both decomposition methods. We scaled the vector length of each module to unit length to facilitate visual comparison of the modules. The spatial modules, describing simultaneous ﬁring of groups of neurons, show ensembles of neurons that were coactive during ﬂicker stimulation ( Figure 2a, d). The temporal modules, describing temporal population activity proﬁles, show elongated temporal periods of population activity over the 1 second intervals relative to the onset time of the stimulus class ( Figure 2b, e). Notably, the SbT-NMF modules are considerably sparser than the BCSbT-NMF modules, but otherwise have somewhat similar shapes. Figure 2 panels c and f show examples of activation coefﬁcients of 4 classes and 2 trials each. These matrices form compact dimensionality-reduced representations of the trials: the number of coefﬁcients per trials (10 × 10) is much smaller than the original number of population spike counts per trial ( 43 × 100). Visually, one can appreciate that the two trials of a class are more similar ( vertical similarity) than trials between classes ( horizontal similarity). In the next section, we will make this statement more formal by training a classiﬁer on the activation coefﬁcients and evaluating decoding performance on a separate test set. 3. 2 DECODING VISUAL INFORMATION FROM RETINAL GANGLION CELLS We applied an LDA decoder on single trial activation coefﬁcients to evaluate how much information the coefﬁcients carried about the visual stimuli. This allowed us to understand how well the decomposition methods could identify lowdimensional representations of the retinal ganglion cell activity that preserved the relevant features. To avoid overﬁtting, we evaluated decoding performance on a separate test set. In addition, we also used spatiotemporal PCA, ICA and orthogonal Tucker2 [12] to obtain other low-dimensional representations of single trial activity subject to different constraints. However, we found that average test set decoding performances of each of these methods were below that of BC SbTNMF and SbT-NMF (see supplementary Fig. S2). Figure 3a and b show the test set classiﬁcation performance that we obtained for SbTNMF and BC-SbT-NMF evaluated in ﬁve stimulus conditions ( NND/NMM, HC, SoL and LC, see Section Methods) on a total of three retinas. Both algorithms captured more information for the movie and high contrast stimuli ( NND/NNM, HC; shown in Figure 3 panel a, decoding performance greater than 50% on all datasets) than for the step of light and low contrast ( SoL, LC; shown in Figure 3 panel b, decoding performance below 30% on all datasets) stimuli. Within these categories, sometimes SbT-NMF achieved higher decoding performance and other times, BC-SbT-NMF performed better. 6
+
+
+a Spatial modules SbT - NMF N1 N2 N3 N4 N5 N6 N7 N8 N9 N10 N11 N12 N13 N14 N15 N16 N17 N18 N19 N20 N21 N22 N23 N24 N25 N26 N27 N28 N29 N30 N31 N32 N33 N34 N35 N36 N37 N38 N39 N40 N41 N42 N43 d Spatial modules BC SbT - NMF N1 N2 N3 N4 N5 N6 N7 N8 N9 N10 N11 N12 N13 N14 N15 N16 N17 N18 N19 N20 N21 N22 N23 N24 N25 N26 N27 N28 N29 N30 N31 N32 N33 N34 N35 N36 N37 N38 N39 N40 N41 N42 N43
+Trial2 Temoral module ID
+Trial1 Temoral module ID
+Trial2 Temoral module ID
+Trial1 Temoral module ID
+b Temporal modules SbT - NMF 1 0. 5
+Temoral module ID Temoral module ID
+Temoral module ID Temoral module ID Temoral module ID Temoral module ID
+0 0
+100 200 300 400 500 600 700 800
+c
+Time (ms)
+Activation coefficients SbT - NMF
+2
+2
+2
+2
+4
+Time4 (ms)
+4
+4
+6
+6
+6
+6
+900 1000 3
+8 10 2 4 6 8 10 Spatial module ID
+8
+8
+10
+10
+2 4 6 8 10
+2 4 6 8 10
+Spatial module ID Spatial module ID
+8
+10
+2
+2 4 6 8 10
+Spatial module ID
+2
+2
+2
+4
+4
+4
+2
+4
+1
+6
+6
+6
+6
+8
+8
+8
+8
+10 2 4 6 8 10 Spatial module ID
+10 2 4 6 8 10 Spatial module ID
+10 2 4 6 8 10 Spatial module ID
+10 2 4 6 8 10 Spatial module ID 0
+e Temporal modules BC - SbT - NMF 1
+0. 5
+Temoral module ID Temoral module ID
+Temoral module ID Temoral module ID
+Temoral module ID Temoral module ID
+0
+0
+100 200 300 400 500 600 700 800 900
+f Time (ms) Activation coefficients BC - SbT - NMF
+2
+2
+2
+4
+4
+4
+6
+6
+6
+8
+8
+8
+10 2 4 6 8 10 Spatial module ID
+10
+10
+2 4 6 8 10
+2 4 6 8 10
+Spatial module ID Spatial module ID
+2 4 6 8 10 2 4 6 8 10 Spatial module ID
+1000 20 10 0
+2 4 6 8 10 2 4 6 8 10 Spatial module ID
+2 4 6 8 10 2 4 6 8 10 Spatial module ID
+2 4 6 8 10 2 4 6 8 10 Spatial module ID
+2 4 6 8 10 2 4 6 8 10 Spatial module ID
+-10 -20
+Figure 2: Examples of spatial and temporal modules and activation coefﬁcients identiﬁed by SbTNMF and BCSbT-NMF on data recorded simultaneously from 43 retinal ganglion cells during low contrast ﬂicker stimulation. (a) Ten non-negative spatial modules (one module per column) . (b) Ten non-negative temporal modules (one module per row) . (c) Two trials of four classes of activation coefﬁcient matrices containing coefﬁcients for all pairs of spatial and temporal modules. (d)-(f) Like a-c, but for BC-SbT-NMF.
+To understand the conditions under which one or the other decomposition method performs better, we investigated the stimulus-elicited change in ﬁring rate from the prestimulus baseline. When evaluating the decoding performance as a function of this change in ﬁring rate, we found that BC-SbT-NMF tended to perform better for high rate changes ( Figure 3c). We quantiﬁed this (Figure 3d) by calculating the difference in decoding performance between BCSbT-NMF and SbTNMF for low rate changes (change < 0. 7 Hz) and for high rate changes (change ≥ 0. 7 Hz). This split separated the rate changes into two clusters ( see Figure 3e). For low rate changes, we found that SbTNMF leaned towards performance than BC-SbT-NMF. The difference in decoding performance, however, was not signiﬁcant ( one-tailed t-test, p = 0.0775). For high rate changes, on the other hand, we found a signiﬁcant performance increase for BCSbT-NMF compared to SbT-NMF (one-tailed t-test, p = 0.0438). 7
+
+
+a
+Classification Performance%
+100 80 60 40 20 0 c
+Retina 1
+SbT NMF NMD/NMM BC SbT NMF NMD/NMM SbT NMF HC BC SbT NMF HC
+Retina 2
+Retina 3
+classification performance %
+100 90 80 70 60 50 40 30 20 10 0 0. 5
+Low baseline corrected spike rate 0 0. 5
+High baseline corrected spike rate
+SBT NMF Base. corr. SBT NMF
+1 1. 5 2 2. 5 3 3. 5 4 base correct spike rate
+Classification performance SBT NMF base corr SBT NMF ( %)
+Classification Performance%
+b 40 30 20 10 0 d 6 4 2 0 2 4 6
+SbT NMF SoL BC SbT NMF SoL SbT NMF LC BC SbT NMF LC
+Retina 1
+Retina 2
+Retina 3
+*
+n.s. Low baseline corrected spike rate
+High baseline corrected spike rate
+Figure 3: (a) Decoding performance of SbT-NMF (dark and light blue) and BC-SbT-NMF (dark and light red) decompositions of spiking activity recorded from three retinas during natural movie ( dark blue and dark red, NMD/NMM) and high contrast ﬂicker ( light blue and light red, HC) stimulation. (b) Same as a, but for step of light (SoL) and low contrast ﬂicker ( LC) stimuli. (c) Baseline-corrected ﬁring rate vs. decoding performance for SbT-NMF (blue) and BC-SbTNMF (red) across all visual stimuli. (d) Classiﬁcation performance difference between BCSbT-NMF and SbT-NMF for high baseline-corrected ﬁring rates and for low baselinecorrected ﬁring rates. * p < 0.05; one-tailed t-test. Error bars indicate s.e.m.
+In summary, these results show that the BC-SbT-NMF decomposition method can achieve a signiﬁcant improvement in decoding performance when there is a substantial change from prestimulus baseline rate to stimulus-elicited ﬁring rate. 3. 3 DISCUSSION Here we introduced a novel computational approach to decompose single trial neural population spike trains into a small set of trialinvariant spatial and temporal ﬁring patterns and into a set of activation coefﬁcients that characterize single trials in terms of the identiﬁed patterns. To this end, we extended space-by-time non-negative matrix factorization to discount the neuronal prestimulus baseline activity. Subtraction of the baseline required the introduction of signed activation coefﬁcients into the decomposition algorithm. This extension considerable widens the scope of applicability of the algorithm as it opens the possibility to decompose data that are inherently signed. Our method inherits many the advantages of the original spaceby-time NMF decomposition such as yielding low-dimensional representations of neural activity that compactly carry stimulus information from both the spatial and temporal dimension. Using non-negativity constraints for the spatial and temporal modules, we could also retain the ability of space-by-time NMF to identify a partsbased representation of the concurrent spatial and temporal ﬁring activity of the population. The factorization into space and time further still allows the quantiﬁcation of the relative importance of these different dimensions on a trialby-trial basis. Recently, Delis et al. (2016) introduced another tensor decomposition algorithm with the capacity to factorize signed data. Their algorithm differs from ours in that it introduces additional constraints for the spatial and temporal modules ( cluster-NMF). Our algorithm, on the other hand, introduces no additional constraints, thereby facilitating the comparison with the original spaceby-time NMF algorithm. In fact, our extension actually relaxes the non-negativity constraint for the activation coefﬁcients without giving up the partsbased representation of the spatial and temporal modules. This made it possible to pinpoint the reason for the increase in performance as the introduction of the baselinecorrection. 8
+
+ While BCSbT-NMF outperformed SbT-NMF overall on tasks with strong baseline activity, we also found that in a few cases, SbT-NMF performed better than BCSbT-NMF. Previous studies showed that there is an effect of the baseline ﬁring rate on the response ( Destexhe et al. , 2003; Gutnisky et al. , 2017). In these situations, the baseline might have an advantageous effect on the representation of neural responses and could lead to better decoding performance of SbTNMF that we observed in some cases. One possibility to take this effect into account would be to devise a joint factorizationdecoding framework that explicitly introduces the baseline into the optimization framework. While this is beyond the scope of the current work, we believe that development of such a framework is a promising direction for future research. In order to evaluate decoding performance, we applied LDA classiﬁcation to the single trial activation coefﬁcients to predict the stimulus identity and also to compare decoding performance of our baseline correction extension with the original spaceby-time NMF decomposition. Speciﬁcally, we could show that our baseline-corrected version of spaceby-time NMF increases decoding performance signiﬁcantly when the difference between prestimulus baseline activity and stimulus-elicited rate was moderate to high. Importantly, this rate-change criterion makes it possible to select the best decomposition method ( SbT-NMF vs. BC-SbT-NMF) following a simple data screening by means of the rate change. On our data, we obtained a relative difference in decoding performance on the order of 19. 18% when picking the right method in this way and comparing to the inferior method. The requirement for such a rate change to perform well can be understood when considering the baselinecorrected activity. Without a substantial change from pre-stimulus to stimuluselicited rate, most of the baseline-corrected activity will be close to zero. The Frobenius norm that is at the core of our objective function puts emphasis on high values and will be sensitive to outliers whenever most of the activity is close to zero. In this situation, our update rules are strongly affected by noise, thereby decreasing cross-validated decoding performance. In practical terms, this new method is expected to improve decoding performance when there is a large sensoryevoked response but the differences in responses across different sensory stimuli is of the order of spontaneous activity. In that case, the discounting of the spontaneous levels of ﬁring would help to better discriminate among different stimuli based on neural responses. While the original space-by-time NMF algorithm could in principle identify spatial and temporal modules that fully account for the implicit baseline, the performance gain of our extension suggests that in practice, the original method cannot completely do so. Additional modules increases the model complexity and the number of parameters the method needs to ﬁt which lowers decoding performance. The discount of the baseline provides an elegant way to avoid this unnecessary complication. REFERENCES Moshe Abeles and George L Gerstein. Detecting spatiotemporal ﬁring patterns among simultaneously recorded single neurons. Journal of Neurophysiology, 60(3):909–924, 1988. Dean V Buonomano and Wolfgang Maass. State-dependent computations: spatiotemporal processing in cortical networks. Nature Reviews Neuroscience, 10(2):113–125, 2009. Mark M Churchland, M Yu Byron, John P Cunningham, Leo P Sugrue, Marlene R Cohen, Greg S Corrado, William T Newsome, Andrew M Clark, Paymon Hosseini, Benjamin B Scott, et al. Stimulus onset quenches neural variability: a widespread cortical phenomenon. Nature Neuroscience, 13(3):369–378, 2010. John P Cunningham and M Yu Byron. Dimensionality reduction for large-scale neural recordings. Nature Neuroscience, 17(11):1500–1509, 2014. Ioannis Delis, Arno Onken, Philippe G Schyns, Stefano Panzeri, and Marios G Philiastides. Spaceby-time decomposition for single-trial decoding of M/EEG activity. NeuroImage, 133:504–515, 2016. Alain Destexhe, Michael Rudolph, and Denis Paré. The high-conductance state of neocortical neurons in vivo. Nature reviews neuroscience, 4(9):739–751, 2003. Karthik Devarajan. Nonnegative matrix factorization: an analytical and interpretive tool in computational biology. PLoS Computational Biology, 4(7):e1000029, 2008. 9
+
+ Chris HQ Ding, Tao Li, and Michael I Jordan. Convex and semi-nonnegative matrix factorizations. IEEE Transactions on Pattern Analysis and Machine Intelligence, 32(1):45–55, 2010. Diego A Gutnisky, Charles B Beaman, Sergio E Lew, and Valentin Dragoi. Spontaneous ﬂuctuations in visual cortical responses inﬂuence population coding accuracy. Cerebral Cortex, 27(2):1409– 1427, 2017. Ralf M Haefner, Sebastian Gerwinn, Jakob H Macke, and Matthias Bethge. Inferring decoding strategies from choice probabilities in the presence of correlated variability. Nature Neuroscience, 16(2):235–242, 2013. Christopher D Harvey, Philip Coen, and David W Tank. Choice-speciﬁc sequences in parietal cortex during a virtualnavigation decision task. Nature, 484(7392):62–68, 2012. Patrik O Hoyer. Non-negative matrix factorization with sparseness constraints. Journal of machine learning research, 5(Nov):1457–1469, 2004. William B Kristan and Brian K Shaw. Population coding and behavioral choice. Current Opinion in Neurobiology, 7(6):826–831, 1997. Mark Laubach, Marshall Shuler, and Miguel AL Nicolelis. Independent component analyses for quantifying neuronal ensemble interactions. Journal of Neuroscience Methods, 94(1):141–154, 1999. Daniel D Lee and H Sebastian Seung. Learning the parts of objects by non-negative matrix factorization. Nature, 401(6755):788–791, 1999. Arno Onken, Jian K Liu, PP Chamanthi R Karunasekara, Ioannis Delis, Tim Gollisch, and Stefano Panzeri. Using matrix and tensor factorizations for the singletrial analysis of population spike trains. PLoS Computational Biology, 12(11):e1005189, 2016. Stefano Panzeri, Nicolas Brunel, Nikos K Logothetis, and Christoph Kayser. Sensory neural codes using multiplexed temporal scales. Trends in Neurosciences, 33(3):111–120, 2010. Stefano Panzeri, Jakob H Macke, Joachim Gross, and Christoph Kayser. Neural population coding: combining insights from microscopic and mass signals. Trends in Cognitive Sciences, 19(3): 162–172, 2015. Alexandre Pouget, Peter Dayan, and Richard Zemel. Information processing with population codes. Nature Reviews Neuroscience, 1(2):125–132, 2000. Caroline A. Runyan, Eugenio Piasini, Stefano Panzeri, and Christopher D. Harvey. Distinct timescales of population coding across cortex. Nature, 548(7665):92–96, 2017. Xilin Shen and François G Meyer. Low-dimensional embedding of fmri datasets. NeuroImage, 41(3): 886–902, 2008. Paris Smaragdis, Cedric Fevotte, Gautham J Mysore, Nasser Mohammadiha, and Matthew Hoffman. Static and dynamic source separation using nonnegative factorizations: A uniﬁed view. IEEE Signal Processing Magazine, 31(3):66–75, 2014. 10
+
+
+SUPPORTING INFORMATION
+Classification performance %
+100 5 msec
+80
+10 msec
+20 msec
+60 50 msec
+40
+20
+0 SbT–NMF
+BC SbT–NMF
+Figure S1: Decoding performance of SbT–NMF and BC–SbT–NMF on discretized spike trains with four different time resolutions ( 5 ms, 10 ms, 20 ms and 50 ms) recorded from three retinas during presentation of natural movie, high contrast ﬂicker, step of light and low contrast ﬂicker stimuli.
+Classification performance % Classification performance %
+a 100 80 60 40 20 0 NMD/NMM
+SbT-NMF BC-SbT-NMF Orthogonal Tucker2 BC-orthogonal Tucker2 Spatiotemporal PCA BCspatiotemporal PCA Spatiotemporal ICA BC-spatiotemporal ICA * * HC
+b 50 40 30 20 10 0
+** ** * * SoL
+SbT-NMF BC-SbT-NMF Orthogonal Tucker2 BC-orthogonal Tucker2 Spatiotemporal PCA BCspatiotemporal PCA Spatiotemporal ICA BC-spatiotemporal ICA LC
+Figure S2: Comparison of decoding performance of various methods. (a) Decoding performance of SbT-NMF, BC-SbT-NMF, orthogonal Tucker2, BC-orthogonal Tucker 2, spatiotemporal PCA, BCspatiotemporal PCA, spatiotemporal ICA and BC-spatiotemporal ICA on spiking activities recorded from three retinas during presentation of natural movie ( NMD/NMM) and high contrast ﬂicker (HC) stimuli. (b) Same as a, but for step of light (SoL) and low contrast ﬂicker ( LC) stimuli.
+11
+
+
+a
+Classification performance %
+20
+15
+10
+5
+0 =0 =1 =1 = 0 10 =1 0 00 =10 0 00 100 0 000 =
+c
+Spatial modules
+Neuron ID
+Bc-SbT-NMF 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1
+Temporal modules BC-SbT-NMF 1 0. 5 0 0 100 200 300 400 500 600 700 800 900 1000 Time ( ms) =1
+e
+Spatial modules
+Bc-SbT-NMF
+Neuron ID
+4410 4432 Temporal modules
+37 3398 BC-SbT-NMF 36
+35
+1
+34
+33
+32
+31
+30
+29
+28
+27
+0. 5
+26
+25
+24
+23
+22
+21
+20
+19
+0
+18
+17 16
+0 100 200 300 400 500 600 700 800 900 1000
+15
+14 13
+Time (ms)
+12
+11
+10
+9
+8
+7
+4365 =100 2
+1
+g
+Neuron ID
+Spatial modules
+Bc-SbT-NMF
+4410 4432 Temporal modules
+3376 3398 BC-SbT-NMF
+35
+1
+34
+33
+32
+31
+30
+29
+28
+27 26 0. 5
+25
+24
+23
+22
+21
+20
+19
+18
+0
+16 17 0 100 200 300 400 500 600 700 800 900 1000
+15
+14
+1121 13 Time (ms)
+10
+9
+8
+7
+43265 =10000
+1
+b
+Spatial modules
+Bc-SbT-NMF
+Neuron ID
+43
+4309 4421 Temporal modules
+3365 3387 BC-SbT-NMF
+34 33 1
+32
+31
+30
+29
+28
+27
+26
+25
+0. 5
+24
+23
+22
+21
+20
+19
+18
+17 16 0
+14 15 0 100 200 300 400 500 600 700 800 900 1000 13
+12
+11 10
+Time (ms)
+9
+8
+7
+6
+5
+4
+3 2 1
+=0
+d
+Spatial modules
+Neuron ID
+Bc-SbT-NMF 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1
+Temporal modules BC-SbT-NMF 1 0. 5 0 0 100 200 300 400 500 600 700 800 900 1000 Time ( ms) =10
+f
+Spatial modules
+Bc-SbT-NMF
+Neuron ID
+43 42 41
+Temporal modules
+3387 4309 BC-SbT-NMF
+36
+35
+1
+34
+33
+32
+31
+30
+29
+28
+27
+0. 5
+26
+25
+24
+23
+22
+21
+20
+19
+0
+18
+17 16
+0 100 200 300 400 500 600 700 800 900 1000
+15
+1132 14 Time (ms)
+11
+10
+9
+8
+7
+4365 =1000 2
+1
+h
+Spatial modules
+Bc-SbT-NMF
+Neuron ID
+43 42 41
+Temporal modules
+40
+39 38 37
+BC-SbT-NMF
+36
+35
+1
+34
+33
+32
+31
+30
+29
+28
+27
+0. 5
+26
+25
+24
+23
+22
+21
+20
+19 18 0
+16 17 0 100 200 300 400 500 600 700 800 900 1000
+15
+14
+13 12
+Time (ms)
+11
+10
+9
+8
+7
+43265 =100000
+1
+Figure S3: L1-regularization on BC-SbT-NMF spatial and temporal modules obtained from step of light stimuli ( SoL). (a) Decoding performance of BC-SbT–NMF regularized with 0, 1, 10, 100, 1000, 10000 and 100000 sparsity constraints. (b-h) Examples of spatial and temporal modules identiﬁed by BCSbT-NMF regularized with λ = 0 (b), λ = 1 (c), λ = 10 (d), λ = 100 (e), λ = 1000 (f), λ = 10000 (g) and λ = 100000 (h).
+12
+
+
+a
+d
+5 x 10 3.48
+Reconstruction error
+3. 47
+3. 46
+3. 45
+3. 44
+3. 43
+3. 42
+3. 41 0
+100
+200
+300
+400
+500
+600
+700
+800
+900 1000
+# of iteration
+b
+5 x 10 3.55
+Reconstruction error
+3. 5
+3. 45
+3. 4
+3. 35
+3. 3
+3. 25
+3. 2
+0
+100
+200
+300
+400
+500
+600
+700
+800
+900 1000
+# of iteration
+e
+5 x 10 3.56
+Reconstruction error
+3. 55
+3. 54
+3. 53
+3. 52
+3. 51
+3. 5
+0
+100
+200
+300
+400
+500
+600
+700
+800
+900
+1000
+# of iteration
+c
+Reconstruction error
+5 x 10 2.7
+2. 6
+2. 5
+2. 4
+2. 3
+2. 2
+2. 1
+2
+1. 9
+1. 8
+1. 7
+0
+100
+200
+300
+400
+500
+600
+700
+800
+900
+1000
+# of Iterarion
+Reconstruction error
+5 x 10 2.044
+2. 042
+2. 04
+2. 038
+2. 036
+2. 034
+2. 032
+2. 03
+2. 028 0
+100
+200
+300
+400
+500
+600
+700
+800
+900
+1000
+# of iteration
+f
+Reconstruction error
+5 x 10 1.805
+1. 8
+1. 795
+1. 79
+1. 785
+1. 78
+1. 775
+1. 77
+1. 765 0
+100
+200
+300
+400
+500
+600
+700
+800
+900
+1000
+# of Iterarion
+Figure S4: Convergence of multiplicative update rules. (a-c) Reconstruction error of SbT-NMF decomposition as a function of update rule iteration during ( a) Natural Movie (NMM), (b) High Contrast ﬂicker ( HC) and (c) Low Contrast ﬂicker (LC) stimuli. (d-f) Same as (a-c) but for BC-SbTNMF decomposition.
+13
+
+
+a
+Classification performance % Classification performance % Reconstruction error %
+100 80 60 40 20 0 Retina 1
+Retina 2
+SbT-NMF BC SbT-NMF Retina 3
+b 100 80 60 40 20 0 Retina 1
+BC-SbT-NMF BC-SbT-NMF with min rec. err
+Retina 2
+Retina 3
+c x 105 4 3. 5 3 2. 5 2 1. 5 1 0. 5 0 Retina 1
+BC-SbT-NMF BC-SbT-NMF with min rec. err
+Retina 2
+Retina 3
+Figure S5: Evaluation of multiple decompositions with random initializations to avoid local minima. (a) Decoding performance of SbT-NMF and BC-SbT-NMF when running 50 decompositions with different random initializations and selecting the decomposition with the smallest reconstruction error for three retinas and presentation of natural movie ( NMD/NMM). (b) Change in decoding performance of BC-SbT-NMF with single decomposition and with smallest reconstruction error. (c) Change in reconstruction error of BC-SbT-NMF with single decomposition and with smallest reconstruction error.
+a
+b
+# of spatial modules Decoding performance % # of spatial modules Decoding performance %
+100
+5
+10
+99
+15 98 20
+25 97 30
+35
+96
+40 10 20 30 40 50 60 70 95 # of temporal modules
+100
+5
+10
+99
+15 98 20
+25 97 30
+35
+96
+40 10 20 30 40 50 60 70 95 # of temporal modules
+Figure S6: Effect of number of modules on decoding performance. Training set decoding performance of (a) SbT-NMF and ( b) BC-SbT-NMF for different numbers of spatial and temporal modules for the natural movie stimulus. Optimal numbers are marked by red squares.
+14

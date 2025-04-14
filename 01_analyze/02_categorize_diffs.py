@@ -6,6 +6,8 @@ import tqdm
 
 from nltk.metrics.distance import edit_distance
 
+print("imports done")
+
 parser = argparse.ArgumentParser(description="")
 parser.add_argument("-d", "--data_dir", default="", type=str, help="")
 
@@ -26,17 +28,28 @@ class DiffSize(object):
     MEDIUM = "medium"
     LARGE = "large"
     XLARGE = "xlarge"
+    NONALPHA = "nonalpha"
 
+
+def is_mostly_nonalpha(diff):
+    chars = "".join(diff["old"] + diff["new"])
+    alpha_chars = [x for x in chars if x.isalpha()]
+    return len(alpha_chars) < len(chars) / 2
 
 def process_diffs(obj):
     sizes = collections.Counter()
     for diff in obj['diffs']:
+        if is_mostly_nonalpha(diff):
+            #print(diff)
+            sizes[DiffSize.NONALPHA] += 1
+            continue
         diff_len = (len(diff['old']), len(diff['new']))
         if diff_len in SMALL_DIFF_LENS:
             a = " ".join(diff['old'])
             b = " ".join(diff['new'])
             if edit_distance(a, b) < TYPO_EDIT_DISTANCE:
                 sizes[DiffSize.TYPO] += 1
+                #print(diff)
             else:
                 sizes[DiffSize.SMALL] += 1
         elif max(diff_len) < SENTENCE_EDIT_LIMIT:
@@ -46,7 +59,7 @@ def process_diffs(obj):
                 sizes[DiffSize.TYPO] += 1
             else:
                 sizes[DiffSize.MEDIUM] += 1
-                print(diff)
+                #print(diff)
         elif max(diff_len) > XL_EDIT_LIMIT:
             sizes[DiffSize.XLARGE] += 1
         else:
@@ -59,7 +72,8 @@ def main():
 
     size_totals = collections.Counter()
     for filename in tqdm.tqdm(list(
-            glob.glob(f"{args.data_dir}/*/*/diffs.json"))):
+            #glob.glob(f"{args.data_dir}/*/*/diffs.json"))):
+            glob.glob(f"{args.data_dir}/*/diffs.json"))):
         with open(filename, 'r') as f:
             try:
                 obj = json.load(f)
