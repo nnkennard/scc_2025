@@ -88,8 +88,7 @@ def main():
     args = parser.parse_args()
 
     for diff_filename in tqdm.tqdm(
-            list(glob.glob(f"{args.data_dir}/{args.conference}/*/diffs.json"))
-        [:5]):
+            list(glob.glob(f"{args.data_dir}/{args.conference}/*/diffs.json"))):
         calculate_section_offsets(diff_filename)
 
 
