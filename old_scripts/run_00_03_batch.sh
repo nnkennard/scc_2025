@@ -14,6 +14,8 @@ array=( $(seq 2018 2023 ) )
 module load conda/latest
 conda activate testName
 export PATH=$PATH:/work/pi_mccallum_umass_edu/nnayak_umass_edu/scc_2025/xpdf-tools-linux-4.05/bin64
-python 03_extract_diffs.py -d /gypsum/work1/mccallum/nnayak/scc_2025_recorded/\
-	 -c iclr_${array[$SLURM_ARRAY_TASK_ID]}
+cd /work/pi_mccallum_umass_edu/nnayak_umass_edu/scc_2025/00_extract
+python 03_extract_diffs.py \
+	-d /gypsum/work1/mccallum/nnayak/scc_2025_recorded/\
+	-c iclr_${array[$SLURM_ARRAY_TASK_ID]}
 

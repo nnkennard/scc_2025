@@ -35,7 +35,7 @@ def calculate_section_offsets(filename):
     flat_tokens = sum(obj['tokens']['source'], [])
 
     sec_num = 0
-    section_builders = [(flat_tokens.index('ABSTRACT'), ['ABSTRACT'], True)]
+    section_builders = []
     for i, token in enumerate(flat_tokens[:-1]):
         if (re.match(SEC_NUMBER_INTEGER, token)
                 and re.match(ALL_CAPS_WORD, flat_tokens[i + 1])
@@ -67,6 +67,20 @@ def calculate_section_offsets(filename):
                     persuasive = False
                 section_builders.append((i, title_tokens, persuasive))
                 sec_num += 1
+
+    if section_builders: # Not empty
+        abstract_index = None
+        if 'ABSTRACT' in flat_tokens:
+            abstract_index = flat_tokens.index('ABSTRACT')
+        elif 'Abstract' in flat_tokens:
+            abstract_index = flat_tokens.index('Abstract')
+        if abstract_index is not None and abstract_index < section_builders[0][0]:
+            section_builders = [(abstract_index, ["ABSTRACT"], True)] + section_builders
+        else:
+            print("No abstract ",
+                filename.split("/")[-3],
+                filename.split("/")[-2])
+
 
     section_builders.append(
         (len(flat_tokens), [], None))  # Placeholder section

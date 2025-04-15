@@ -11,6 +11,8 @@ array=( $(seq 2018 2023 ) )
 
 module load conda/latest
 conda activate testName
-python 02_clean_iclr.py -d /gypsum/work1/mccallum/nnayak/scc_2025_recorded/\
-	 -c iclr_${array[$SLURM_ARRAY_TASK_ID]}
+cd /work/pi_mccallum_umass_edu/nnayak_umass_edu/scc_2025/00_extract
+python 02_clean_iclr.py \
+	-d /gypsum/work1/mccallum/nnayak/scc_2025_recorded/\
+	-c iclr_${array[$SLURM_ARRAY_TASK_ID]}
 

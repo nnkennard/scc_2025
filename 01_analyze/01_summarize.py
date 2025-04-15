@@ -99,7 +99,7 @@ def main():
 
 
     with open('final_statuses.tsv', 'w') as f:
-        writer = csv.DictWriter(f, 
+        writer = csv.DictWriter(f,
         fieldnames="forum conference decision revision".split(), delimiter="\t")
         writer.writeheader()
         for (c, d, r), forums in status_counter.items():
