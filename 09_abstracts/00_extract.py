@@ -17,15 +17,12 @@ parser.add_argument("-c",
                     help="conference_year, e.g. iclr_2022",
                     required=True)
 
-#MINI_PARSE_RE = re.compile(("(?P<title>.*).*ABSTRACT "
-#                            "(?P<abstract>.*)1\sINTRODUCTION "
-#                            "(?P<intro>.+?)2\s(?P<sec2>[^a-z]+)[A-Z]"))
 
-PAPER_INFO_FIELDS = "forum_id version title abstract intro sec2".split()
+VERSION_INFO_FIELDS = "title abstract intro sec2".split()
 
-PaperInfo = collections.namedtuple("PaperInfo", PAPER_INFO_FIELDS)
+VersionInfo = collections.namedtuple("VersionInfo", VERSION_INFO_FIELDS)
 
-def default_initial(initial_text, forum_id):
+def parse_initial(initial_text, forum_id):
     title = initial_text.split("\n")[0]
     if 'Anonymous' in title:
         r = re.search("Anonymous", title).span()[0]
@@ -52,8 +49,40 @@ def default_initial(initial_text, forum_id):
             return None
     r = re.search("2\s[A-Z]+", post_int).span()[0]
     maybe_int = post_int[:r]
-    return PaperInfo(forum_id, new_scc_lib.INITIAL,
-    title, maybe_abs, maybe_int, post_int[r:r+100])
+    return VersionInfo(title, maybe_abs, maybe_int, post_int[r:r+100])
+
+
+def subtitle_splitter(subtitle_strings, text):
+    for subtitle in substitle_strings:
+        if subtitle in text:
+            try:
+               pre, post = text.split(subtitle, 1)
+               return pre, post
+            except ValueError:
+                print(f"Cannot find {subtitle}")
+                return None
+    return None
+
+
+def parse_final(final_text, forum_id):
+    final_text = final_text.strip()
+    title = final_text.split("\n")[0]
+    if 'Anonymous' in title:
+        r = re.search("Anonymous", title).span()[0]
+        title = title[:r]
+    else:
+        maybe_name_start = re.search("[A-Z][a-z]", title)
+        if maybe_name_start is not None:
+            title = title[:maybe_name_start.span()[0]]
+    print(title)
+    final_text = final_text.replace("\n", "").strip()
+
+    pre_abs, post_abs = subtitle_splitter(["Abstract", "ABSTRACT"], final_text)
+    abstract, post_int = subtitle_splitter(["1 Introduction", "1 INTRODUCTION"],
+    final_text)
+    next_sec_offset = re.search("2\s[A-Z]+", post_int).span()[0]
+    introduction = post_int[:r]
+    return VersionInfo(title, maybe_abs, maybe_int, post_int[r:r+100])
 
 
 
@@ -62,11 +91,14 @@ def main():
     papers = []
     for initial_filename in tqdm.tqdm(
             list(glob.glob(
-                f"{args.data_dir}/{args.conference}/*/initial.txt"))):
+                f"{args.data_dir}/{args.conference}/*/initial.txt"))[:10]):
         forum_id = initial_filename.split("/")[-2]
         with open(initial_filename, 'r') as f:
-            papers.append(default_initial(f.read().strip(),
-            forum_id))
+            initial_info = parse_initial(f.read(), forum_id)
+        final_filename = initial_filename.replace("initial", "final")
+        with open(final_filename, 'r') as f:
+            final_info = parse_final(f.read(), forum_id)
+            print("=" * 80)
 
 if __name__ == "__main__":
     main()
